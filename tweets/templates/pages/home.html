@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block page_title %}
+Home
+{% endblock page_title %}
+
+{% block content %}
+
+
+<style>
+    body{
+        color:white;
+        background:#0b253c;
+        
+    }
+    
+    .btn-primary{
+        background-color: #176bbd;
+    }
+    textarea{
+        background :#043158 !important;
+        border:white 1px solid;
+        padding:1em;
+        border-radius:.5em;
+        color:white;
+        width:100%;
+    }
+    *::placeholder{
+        color:rgba(255, 255, 255, 0.493);
+    }
+</style>
+<div class="text-center row">
+    <div class="col">
+        <h3>Hello This is Jayesh</h3>
+    </div>
+</div>
+<div class="row mb-5">
+    <div class="col-md-8 mx-auto col-10">
+        <form id="tweet-create-form" method="post" action="/create_tweet">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="/">
+            <textarea name="content" required id="id_content" placeholder="Your Tweet ...." cols="30" rows="5"></textarea>
+            <button type="submit" class="btn btn-primary">Tweet</button>
+        </form>
+
+    </div>
+</div>
+
+<div class="row" id="tweets"> ...Loading</div>
+<script>
+
+    function formatTweet(tweet) {
+
+        return `<div class="col-12 col-md-10 mx-auto mb-4 tweet py-3 border-bottom " id="tweet-${tweet.id}">
+            <p>${tweet.content}</p> <button onclick="addLike(${tweet.id},${tweet.likes})"class="btn btn-primary btn-${tweet.id}">${tweet.likes} Likes </button>
+        </div>`
+
+
+    }
+    function addLike(id, likes){
+        console.log(id, ++likes)
+
+    }
+
+    const tweets = document.getElementById('tweets')
+    // Load tweets
+    function loadTweets(){
+        console.log("tweets loaded")
+
+        const xmlhttp = new XMLHttpRequest()
+        const method = "GET"
+        const url = "/tweets"
+        const responseType = "json"
+        xmlhttp.responseType = responseType
+        xmlhttp.open(method, url)
+        xmlhttp.onload = () => {
+            var server_response = xmlhttp.response
+            var tweet_list = server_response.response
+            // tweet_list.reverse()
+            tweets.innerHTML = ''
+            for (let i = 0; i < tweet_list.length; i++) {
+                const tweet = tweet_list[i];
+                tweets.innerHTML += formatTweet(tweet)
+
+            }
+        }
+        xmlhttp.send()
+
+    }
+    // AJAX form submit
+    document.getElementById("tweet-create-form").addEventListener("submit",(event)=>{
+        event.preventDefault()
+        var tweetForm = event.target
+        // console.log(tweetForm.action)
+        let tweetFormData = new FormData(tweetForm)
+
+        for(var data of tweetFormData.entries()){
+            // console.log(data)
+        }
+
+        var createTweetRequest =  new XMLHttpRequest()
+
+        createTweetRequest.open(tweetForm.method , tweetForm.action)  
+        createTweetRequest.responseType="json"  
+        createTweetRequest.setRequestHeader("HTTP_X_REQUESTED_WITH","XMLHttpRequest")
+        createTweetRequest.setRequestHeader("X-Requested-With","XMLHttpRequest")
+        
+
+        createTweetRequest.onload =()=>{
+            // console.log(createTweetRequest.response, createTweetRequest.status)
+            if (createTweetRequest.status === 201){
+                tweets.innerHTML = formatTweet(createTweetRequest.response) + tweets.innerHTML
+                tweetForm.reset()
+
+            }
+            else if (createTweetRequest.status === 400){
+                console.log(createTweetRequest.response.content)
+                alert(createTweetRequest.response.content)
+            }
+
+            else if (createTweetRequest.status === 500){
+                alert("A server Error Occured . Try Agin Later")
+            }
+
+                
+            
+        }
+        
+        createTweetRequest.send(tweetFormData)
+        createTweetRequest.onerror=()=>{
+            alert("An error occured Try agin later")
+        }
+
+
+
+    })
+
+
+
+
+    loadTweets()
+</script>
+{% endblock content %}
